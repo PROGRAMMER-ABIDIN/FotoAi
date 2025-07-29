@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Kamera Fotografer</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #111; color: white; }
+    video, canvas { max-width: 100%; border: 2px solid #fff; border-radius: 10px; margin-top: 10px; }
+    #feedback { margin: 10px; font-size: 1.2em; color: yellow; }
+    #capture { padding: 10px 20px; background: green; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>AI Kamera Fotografer</h1>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <div id="feedback">Mendeteksi...</div>
+  <button id="capture">Ambil Foto</button>  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const feedback = document.getElementById("feedback");
+    const captureBtn = document.getElementById("capture");
+    const ctx = canvas.getContext("2d");
+
+    // Get camera access
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert("Akses kamera ditolak."));
+
+    // Gyroscope dan accelerometer untuk deteksi kemiringan
+    window.addEventListener("deviceorientation", e => {
+      const beta = e.beta;  // up/down
+      const gamma = e.gamma; // left/right
+
+      let msg = "Stabil";
+      if (Math.abs(beta) > 10 || Math.abs(gamma) > 10) {
+        msg = `Kamera miring: β=${beta.toFixed(1)}°, γ=${gamma.toFixed(1)}°`;
+        playBeep();
+      }
+
+      feedback.textContent = msg;
+    });
+
+    function playBeep() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = ctx.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+      oscillator.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.2);
+    }
+
+    // Ambil foto dan simpan jika stabil
+    captureBtn.onclick = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+
+      const imgURL = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = imgURL;
+      link.download = `foto_${Date.now()}.png`;
+      link.click();
+      feedback.textContent = "Foto disimpan!";
+    };
+  </script></body>
+</html>
