@@ -2,149 +2,1211 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Deteksi Kamera AI + Suara</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kamera AI Fotografer Profesional</title>
   <style>
+    :root {
+      --primary: #4a6fa5;
+      --secondary: #166088;
+      --accent: #4fc3f7;
+      --success: #28a745;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --dark: #111;
+      --light: #f8f9fa;
+    }
+    
     body {
-      background-color: #111;
-      color: white;
+      background-color: var(--dark);
+      color: var(--light);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
       text-align: center;
-      font-family: sans-serif;
     }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    
+    .camera-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .video-wrapper, .canvas-wrapper {
+      position: relative;
+      border: 3px solid var(--secondary);
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
     video, canvas {
-      border: 2px solid #fff;
-      border-radius: 10px;
-      margin: 10px;
-      width: 80%;
+      width: 100%;
       max-width: 500px;
+      display: block;
     }
+    
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+      background-size: 33.33% 33.33%;
+    }
+    
+    .face-mesh {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .controls {
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-success {
+      background-color: var(--success);
+      color: white;
+    }
+    
+    .btn-warning {
+      background-color: var(--warning);
+      color: black;
+    }
+    
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+    
+    .btn-accent {
+      background-color: var(--accent);
+      color: white;
+    }
+    
     #status {
       font-size: 1.2em;
-      margin-top: 20px;
-      padding: 10px;
-      background: #222;
+      margin: 20px auto;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.5);
       border-radius: 10px;
+      max-width: 800px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .status-icon {
+      font-size: 1.5em;
+    }
+    
+    .settings-panel {
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+      text-align: left;
+    }
+    
+    .settings-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    select, input[type="range"] {
+      width: 100%;
+      max-width: 300px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid var(--secondary);
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 8px;
+      background: var(--secondary);
+      border-radius: 5px;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    
+    .range-value {
       display: inline-block;
+      width: 40px;
+      text-align: center;
+    }
+    
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    
+    .thumbnail {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid var(--secondary);
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    
+    .thumbnail:hover {
+      transform: scale(1.1);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+    }
+    
+    .pose-indicator {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .expression-indicator {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .face-landmark {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background-color: red;
+      border-radius: 50%;
+      transform: translate(-2px, -2px);
+    }
+    
+    @media (max-width: 768px) {
+      .button-group {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>AI Kamera dengan Suara</h1>
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" hidden></canvas>
-  <div id="status">Memuat kamera...</div>
-
+  <div class="container">
+    <h1>📷 Kamera AI Fotografer Profesional</h1>
+    
+    <div class="camera-container">
+      <div class="video-wrapper">
+        <video id="video" autoplay playsinline></video>
+        <div class="overlay">
+          <div class="grid-overlay"></div>
+          <div class="pose-indicator" id="poseIndicator"></div>
+          <div class="expression-indicator" id="expressionIndicator"></div>
+          <canvas class="face-mesh" id="faceMesh"></canvas>
+        </div>
+      </div>
+      <div class="canvas-wrapper" style="display: none;">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+    
+    <div id="status">
+      <span class="status-icon">⏳</span>
+      <span>Memuat kamera dan model AI...</span>
+    </div>
+    
+    <div class="controls">
+      <div class="button-group">
+        <button class="btn-primary" onclick="capturePhoto()">
+          <span>📸</span> Ambil Foto
+        </button>
+        <button class="btn-success" id="autoModeBtn" onclick="toggleAutoMode()">
+          <span>🤖</span> Mode Otomatis: OFF
+        </button>
+        <button class="btn-warning" onclick="toggleFlash()">
+          <span>⚡</span> Flash: OFF
+        </button>
+        <button class="btn-accent" onclick="toggleCamera()">
+          <span>🔄</span> Ganti Kamera
+        </button>
+      </div>
+      
+      <div class="button-group">
+        <button class="btn-primary" onclick="showGuide('pose')">
+          <span>🧍</span> Panduan Pose
+        </button>
+        <button class="btn-primary" onclick="showGuide('expression')">
+          <span>😊</span> Panduan Ekspresi
+        </button>
+        <button class="btn-primary" onclick="showGuide('composition')">
+          <span>🎨</span> Panduan Komposisi
+        </button>
+        <button class="btn-primary" onclick="showGuide('lighting')">
+          <span>💡</span> Panduan Pencahayaan
+        </button>
+      </div>
+    </div>
+    
+    <div class="settings-panel">
+      <h3>⚙️ Pengaturan Kamera</h3>
+      <div class="settings-row">
+        <div>
+          <label for="resolution">Resolusi</label>
+          <select id="resolution">
+            <option value="hd">HD (1280x720)</option>
+            <option value="fullhd" selected>Full HD (1920x1080)</option>
+            <option value="4k">4K (3840x2160)</option>
+          </select>
+        </div>
+        <div>
+          <label for="exposure">Exposure</label>
+          <input type="range" id="exposure" min="-3" max="3" step="0.1" value="0">
+          <span class="range-value" id="exposureValue">0</span>
+        </div>
+        <div>
+          <label for="whiteBalance">White Balance</label>
+          <select id="whiteBalance">
+            <option value="auto" selected>Auto</option>
+            <option value="daylight">Daylight</option>
+            <option value="cloudy">Cloudy</option>
+            <option value="tungsten">Tungsten</option>
+            <option value="fluorescent">Fluorescent</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="settings-row">
+        <div>
+          <label for="brightness">Brightness</label>
+          <input type="range" id="brightness" min="-1" max="1" step="0.1" value="0">
+          <span class="range-value" id="brightnessValue">0</span>
+        </div>
+        <div>
+          <label for="contrast">Contrast</label>
+          <input type="range" id="contrast" min="0" max="2" step="0.1" value="1">
+          <span class="range-value" id="contrastValue">1</span>
+        </div>
+        <div>
+          <label for="saturation">Saturation</label>
+          <input type="range" id="saturation" min="0" max="2" step="0.1" value="1">
+          <span class="range-value" id="saturationValue">1</span>
+        </div>
+      </div>
+      
+      <div class="settings-row">
+        <div>
+          <label for="filter">Filter</label>
+          <select id="filter">
+            <option value="none" selected>None</option>
+            <option value="sepia">Sepia</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="vintage">Vintage</option>
+            <option value="warm">Warm</option>
+            <option value="cool">Cool</option>
+          </select>
+        </div>
+        <div>
+          <label for="grid">Grid Overlay</label>
+          <select id="grid">
+            <option value="none">None</option>
+            <option value="ruleOfThirds" selected>Rule of Thirds</option>
+            <option value="goldenRatio">Golden Ratio</option>
+            <option value="crosshair">Crosshair</option>
+          </select>
+        </div>
+        <div>
+          <label for="voiceGuide">Panduan Suara</label>
+          <select id="voiceGuide">
+            <option value="on" selected>ON</option>
+            <option value="off">OFF</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <h3>🖼️ Galeri Foto</h3>
+    <div class="gallery" id="gallery"></div>
+  </div>
+  
+  <div class="modal" id="guideModal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+  
   <script>
+    // Elemen DOM
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
+    const faceMeshCanvas = document.getElementById("faceMesh");
     const statusText = document.getElementById("status");
-
-    let lastSpoken = ""; // untuk hindari pengulangan suara
-
-    // 🔊 Fungsi bicara
-    function speak(text) {
-      if (text === lastSpoken) return;
-      lastSpoken = text;
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "id-ID";
-      window.speechSynthesis.cancel(); // hentikan yang sedang bicara
-      window.speechSynthesis.speak(utterance);
-    }
-
-    // 🎥 Aktifkan kamera
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then((stream) => {
+    const poseIndicator = document.getElementById("poseIndicator");
+    const expressionIndicator = document.getElementById("expressionIndicator");
+    const gallery = document.getElementById("gallery");
+    const guideModal = document.getElementById("guideModal");
+    const modalContent = document.getElementById("modalContent");
+    const autoModeBtn = document.getElementById("autoModeBtn");
+    
+    // Konteks canvas
+    const ctx = canvas.getContext("2d");
+    const faceMeshCtx = faceMeshCanvas.getContext("2d");
+    
+    // State aplikasi
+    let stream = null;
+    let currentCamera = "environment";
+    let isAutoMode = false;
+    let isFlashOn = false;
+    let lastSpoken = "";
+    let lastFrame = null;
+    let faceDetector = null;
+    let poseDetector = null;
+    let faceLandmarks = [];
+    let pose = null;
+    let expression = "";
+    let photos = [];
+    let autoModeInterval = null;
+    
+    // Inisialisasi kamera
+    async function initCamera() {
+      statusText.innerHTML = '<span class="status-icon">⏳</span><span>Memuat kamera...</span>';
+      
+      try {
+        // Hentikan stream sebelumnya jika ada
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        
+        // Dapatkan perangkat kamera
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length === 0) {
+          throw new Error("Tidak ada kamera yang ditemukan");
+        }
+        
+        // Atur resolusi berdasarkan pilihan
+        const resolution = document.getElementById("resolution").value;
+        let constraints = {
+          video: {
+            facingMode: currentCamera,
+            width: { ideal: resolution === '4k' ? 3840 : resolution === 'fullhd' ? 1920 : 1280 },
+            height: { ideal: resolution === '4k' ? 2160 : resolution === 'fullhd' ? 1080 : 720 }
+          }
+        };
+        
+        // Dapatkan stream kamera
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
+        
+        // Setel ukuran canvas saat video siap
         video.onloadedmetadata = () => {
-          video.play();
+          faceMeshCanvas.width = video.videoWidth;
+          faceMeshCanvas.height = video.videoHeight;
+          updateStatus("Kamera siap", "✅");
           startDetection();
         };
-      })
-      .catch((err) => {
-        statusText.innerText = "Gagal mengakses kamera: " + err.message;
+      } catch (err) {
+        console.error("Error accessing camera:", err);
+        updateStatus("Gagal mengakses kamera: " + err.message, "❌");
         speak("Gagal membuka kamera");
-      });
-
-    // 🔍 Analisis posisi & gerakan
-    function startDetection() {
-      const ctx = canvas.getContext("2d");
+      }
+    }
+    
+    // Mulai deteksi AI
+    async function startDetection() {
+      // Load model AI
+      try {
+        updateStatus("Memuat model AI...", "⏳");
+        
+        // Load Face Detection model (gunakan library seperti TensorFlow.js atau Face-api.js)
+        // Ini adalah contoh pseudocode - implementasi aktual akan memerlukan library yang sesuai
+        /*
+        faceDetector = await faceapi.loadFaceDetectionModel('/models');
+        poseDetector = await poseDetection.createDetector(
+          poseDetection.SupportedModels.MoveNet,
+          { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+        );
+        */
+        
+        updateStatus("Model AI siap", "✅");
+        
+        // Mulai loop deteksi
+        detectLoop();
+      } catch (err) {
+        console.error("Error loading AI models:", err);
+        updateStatus("Gagal memuat model AI", "❌");
+      }
+    }
+    
+    // Loop deteksi utama
+    function detectLoop() {
+      if (!stream) return;
+      
+      // Bersihkan canvas face mesh
+      faceMeshCtx.clearRect(0, 0, faceMeshCanvas.width, faceMeshCanvas.height);
+      
+      // Deteksi wajah dan pose (simulasi)
+      detectFaceAndPose();
+      
+      // Analisis frame
+      analyzeFrame();
+      
+      // Jika mode otomatis aktif, cek kondisi foto
+      if (isAutoMode) {
+        checkAutoCaptureConditions();
+      }
+      
+      // Lanjutkan loop
+      requestAnimationFrame(detectLoop);
+    }
+    
+    // Deteksi wajah dan pose (simulasi)
+    function detectFaceAndPose() {
+      // Ini adalah contoh simulasi - implementasi nyata akan menggunakan library AI
+      const now = Date.now();
+      
+      // Simulasi deteksi wajah (acak untuk demo)
+      if (Math.random() > 0.3) { // 70% chance mendeteksi wajah
+        faceLandmarks = Array(68).fill().map((_, i) => {
+          return {
+            x: 0.5 * faceMeshCanvas.width + Math.sin(now/1000 + i/10) * 50,
+            y: 0.5 * faceMeshCanvas.height + Math.cos(now/1000 + i/5) * 50
+          };
+        });
+        
+        // Gambar landmark wajah
+        faceMeshCtx.strokeStyle = 'red';
+        faceMeshCtx.lineWidth = 1;
+        faceMeshCtx.beginPath();
+        faceLandmarks.forEach((point, i) => {
+          if (i === 0) {
+            faceMeshCtx.moveTo(point.x, point.y);
+          } else {
+            faceMeshCtx.lineTo(point.x, point.y);
+          }
+        });
+        faceMeshCtx.stroke();
+        
+        // Tentukan ekspresi berdasarkan landmark (sederhana)
+        const mouthOpenness = Math.abs(faceLandmarks[57].y - faceLandmarks[51].y);
+        const eyebrowRaise = Math.abs(faceLandmarks[19].y - faceLandmarks[41].y);
+        
+        if (mouthOpenness > 30) {
+          expression = "😃 Senyum lebar";
+        } else if (mouthOpenness > 20) {
+          expression = "😊 Senyum";
+        } else if (eyebrowRaise > 15) {
+          expression = "😲 Terkejut";
+        } else {
+          expression = "😐 Netral";
+        }
+        
+        expressionIndicator.textContent = expression;
+      } else {
+        faceLandmarks = [];
+        expression = "Tidak terdeteksi";
+        expressionIndicator.textContent = "";
+      }
+      
+      // Simulasi deteksi pose (acak untuk demo)
+      const poses = ["🧍 Berdiri tegak", "🤳 Selfie", "🚶 Bergerak", "💃 Pose kreatif"];
+      pose = poses[Math.floor(Math.random() * poses.length)];
+      poseIndicator.textContent = pose;
+    }
+    
+    // Analisis frame untuk stabilitas, fokus, dll.
+    function analyzeFrame() {
+      if (!video.videoWidth) return;
+      
+      // Setel ukuran canvas jika berubah
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+      
+      // Gambar frame saat ini ke canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      // Analisis frame
+      const stability = lastFrame ? getImageDifference(lastFrame, frame) : 0;
+      const tilt = detectTilt(ctx, canvas);
+      const blur = detectBlur(frame);
+      const lighting = detectLighting(frame);
+      const composition = analyzeComposition();
+      
+      // Buat rekomendasi berdasarkan analisis
+      let recommendations = [];
+      
+      if (stability > 50) {
+        recommendations.push("📸 Kamera tidak stabil!");
+      }
+      
+      if (tilt.horizontal > 10) {
+        recommendations.push("↪️ Kamera miring ke kanan.");
+      } else if (tilt.horizontal < -10) {
+        recommendations.push("↩️ Kamera miring ke kiri.");
+      }
+      
+      if (tilt.vertical > 10) {
+        recommendations.push("🔽 Kamera terlalu menghadap ke bawah.");
+      } else if (tilt.vertical < -10) {
+        recommendations.push("🔼 Kamera terlalu menghadap ke atas.");
+      }
+      
+      if (blur > 20) {
+        recommendations.push("🔍 Gambar blur, belum fokus.");
+      }
+      
+      if (lighting < 30) {
+        recommendations.push("🌑 Cahaya terlalu gelap.");
+      } else if (lighting > 200) {
+        recommendations.push("💡 Cahaya terlalu terang.");
+      }
+      
+      if (faceLandmarks.length > 0) {
+        if (composition.facePosition === "left") {
+          recommendations.push("👈 Wajah terlalu ke kiri frame.");
+        } else if (composition.facePosition === "right") {
+          recommendations.push("👉 Wajah terlalu ke kanan frame.");
+        }
+        
+        if (composition.faceSize < 0.2) {
+          recommendations.push("🔎 Wajah terlalu kecil dalam frame.");
+        } else if (composition.faceSize > 0.6) {
+          recommendations.push("🧑 Wajah terlalu besar dalam frame.");
+        }
+      }
+      
+      // Update status
+      if (recommendations.length > 0) {
+        updateStatus(recommendations.join(" "), "⚠️");
+        if (document.getElementById("voiceGuide").value === "on") {
+          speak(recommendations[0]);
+        }
+      } else {
+        updateStatus("✅ Siap ambil foto. " + (faceLandmarks.length ? "Wajah terdeteksi." : ""), "✅");
+        if (document.getElementById("voiceGuide").value === "on" && !isAutoMode) {
+          speak("Kamera siap untuk ambil gambar");
+        }
+      }
+      
+      lastFrame = frame;
+    }
+    
+    // Ambil foto
+    function capturePhoto() {
+      if (!stream) return;
+      
+      // Flash effect
+      if (isFlashOn) {
+        document.body.style.backgroundColor = "white";
+        setTimeout(() => {
+          document.body.style.backgroundColor = "var(--dark)";
+        }, 100);
+      }
+      
+      // Setel ukuran canvas
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
-      let lastFrame = null;
-
-      setInterval(() => {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const stability = getImageDifference(lastFrame, frame);
-
-        const tilt = detectTilt(ctx, canvas);
-
-        let status = "";
-
-        if (stability > 50) {
-          status = "📸 Kamera tidak stabil! Harap diamkan.";
-          speak("Kamera tidak stabil, harap pegang dengan mantap.");
-        } else if (tilt.horizontal > 10) {
-          status = "↪️ Kamera miring ke kanan.";
-          speak("Posisi kamera miring ke kanan.");
-        } else if (tilt.horizontal < -10) {
-          status = "↩️ Kamera miring ke kiri.";
-          speak("Posisi kamera miring ke kiri.");
-        } else if (tilt.vertical > 10) {
-          status = "🔽 Kamera terlalu menghadap ke bawah.";
-          speak("Kamera menghadap terlalu ke bawah.");
-        } else if (tilt.vertical < -10) {
-          status = "🔼 Kamera terlalu menghadap ke atas.";
-          speak("Kamera menghadap terlalu ke atas.");
-        } else {
-          status = "✅ Kamera stabil & posisi bagus.";
-          speak("Kamera dalam posisi bagus, silakan ambil gambar.");
-        }
-
-        statusText.innerText = status;
-        lastFrame = frame;
-      }, 1000);
+      
+      // Gambar frame dengan filter yang dipilih
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      applyFilter();
+      
+      // Simpan foto ke galeri
+      saveToGallery();
+      
+      // Tampilkan preview
+      showPreview();
+      
+      // Beri umpan balik
+      updateStatus("Foto berhasil diambil!", "📸");
+      speak("Foto berhasil disimpan");
     }
-
-    // 📷 Deteksi gerakan dari frame sebelumnya
-    function getImageDifference(frame1, frame2) {
-      if (!frame1 || !frame2) return 0;
+    
+    // Simpan ke galeri
+    function saveToGallery() {
+      const photoUrl = canvas.toDataURL("image/jpeg");
+      photos.push(photoUrl);
+      
+      // Update tampilan galeri
+      updateGallery();
+    }
+    
+    // Update tampilan galeri
+    function updateGallery() {
+      gallery.innerHTML = "";
+      photos.forEach((photo, index) => {
+        const img = document.createElement("img");
+        img.src = photo;
+        img.className = "thumbnail";
+        img.onclick = () => showPhoto(photo);
+        gallery.appendChild(img);
+      });
+    }
+    
+    // Tampilkan foto besar
+    function showPhoto(photoUrl) {
+      modalContent.innerHTML = `<img src="${photoUrl}" style="max-width: 100%; max-height: 80vh;">`;
+      guideModal.style.display = "flex";
+    }
+    
+    // Tampilkan preview
+    function showPreview() {
+      const preview = document.querySelector(".canvas-wrapper");
+      preview.style.display = "block";
+      setTimeout(() => {
+        preview.style.display = "none";
+      }, 2000);
+    }
+    
+    // Terapkan filter
+    function applyFilter() {
+      const filter = document.getElementById("filter").value;
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      switch (filter) {
+        case "sepia":
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+            data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+            data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+          }
+          break;
+          
+        case "grayscale":
+          for (let i = 0; i < data.length; i += 4) {
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            data[i] = avg;
+            data[i + 1] = avg;
+            data[i + 2] = avg;
+          }
+          break;
+          
+        case "vintage":
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] *= 0.9;
+            data[i + 1] *= 0.8;
+            data[i + 2] *= 0.7;
+            data[i] += 20;
+            data[i + 1] += 10;
+          }
+          break;
+          
+        case "warm":
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] *= 1.2;
+            data[i + 1] *= 1.1;
+          }
+          break;
+          
+        case "cool":
+          for (let i = 0; i < data.length; i += 4) {
+            data[i + 1] *= 1.1;
+            data[i + 2] *= 1.2;
+          }
+          break;
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    }
+    
+    // Mode otomatis
+    function toggleAutoMode() {
+      isAutoMode = !isAutoMode;
+      autoModeBtn.innerHTML = `<span>🤖</span> Mode Otomatis: ${isAutoMode ? "ON" : "OFF"}`;
+      
+      if (isAutoMode) {
+        updateStatus("Mode otomatis aktif - AI akan mengambil foto saat kondisi ideal", "🤖");
+        speak("Mode otomatis aktif");
+      } else {
+        updateStatus("Mode otomatis nonaktif", "✅");
+        speak("Mode otomatis mati");
+      }
+    }
+    
+    // Cek kondisi untuk auto capture
+    function checkAutoCaptureConditions() {
+      if (!lastFrame) return;
+      
+      const stability = getImageDifference(lastFrame, ctx.getImageData(0, 0, canvas.width, canvas.height));
+      const blur = detectBlur(lastFrame);
+      const tilt = detectTilt(ctx, canvas);
+      const lighting = detectLighting(lastFrame);
+      
+      // Kondisi ideal untuk mengambil foto
+      if (stability < 30 && 
+          blur < 15 && 
+          Math.abs(tilt.horizontal) < 5 && 
+          Math.abs(tilt.vertical) < 5 && 
+          lighting > 50 && lighting < 180 &&
+          faceLandmarks.length > 0) {
+        capturePhoto();
+      }
+    }
+    
+    // Toggle flash
+    function toggleFlash() {
+      isFlashOn = !isFlashOn;
+      document.querySelector(".btn-warning").innerHTML = `<span>⚡</span> Flash: ${isFlashOn ? "ON" : "OFF"}`;
+      speak(`Flash ${isFlashOn ? "nyala" : "mati"}`);
+    }
+    
+    // Ganti kamera (depan/belakang)
+    function toggleCamera() {
+      currentCamera = currentCamera === "user" ? "environment" : "user";
+      initCamera();
+      speak(`Kamera ${currentCamera === "user" ? "depan" : "belakang"}`);
+    }
+    
+    // Fungsi analisis gambar
+    function getImageDifference(f1, f2) {
+      if (!f1 || !f2) return 0;
       let diff = 0;
-      for (let i = 0; i < frame1.data.length; i += 4) {
-        const avg1 = (frame1.data[i] + frame1.data[i + 1] + frame1.data[i + 2]) / 3;
-        const avg2 = (frame2.data[i] + frame2.data[i + 1] + frame2.data[i + 2]) / 3;
+      for (let i = 0; i < f1.data.length; i += 4) {
+        const avg1 = (f1.data[i] + f1.data[i+1] + f1.data[i+2]) / 3;
+        const avg2 = (f2.data[i] + f2.data[i+1] + f2.data[i+2]) / 3;
         diff += Math.abs(avg1 - avg2);
       }
-      return diff / (frame1.data.length / 4);
+      return diff / (f1.data.length / 4);
     }
-
-    // 🎯 Deteksi kemiringan dengan distribusi cahaya
+    
+    function detectBlur(frame) {
+      let total = 0;
+      for (let i = 0; i < frame.data.length; i += 4) {
+        total += Math.abs(frame.data[i] - frame.data[i+1]) +
+                 Math.abs(frame.data[i+1] - frame.data[i+2]) +
+                 Math.abs(frame.data[i+2] - frame.data[i]);
+      }
+      return total / (frame.data.length / 4);
+    }
+    
     function detectTilt(ctx, canvas) {
       const width = canvas.width;
       const height = canvas.height;
-
       const image = ctx.getImageData(0, 0, width, height);
       let left = 0, right = 0, top = 0, bottom = 0;
-
+      
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           const i = (y * width + x) * 4;
-          const brightness = (image.data[i] + image.data[i + 1] + image.data[i + 2]) / 3;
-
+          const brightness = (image.data[i] + image.data[i+1] + image.data[i+2]) / 3;
+          
           if (x < width / 2) left += brightness;
           else right += brightness;
-
+          
           if (y < height / 2) top += brightness;
           else bottom += brightness;
         }
       }
-
+      
       const horizontalTilt = (right - left) / (left + right) * 100;
       const verticalTilt = (bottom - top) / (top + bottom) * 100;
-
+      
       return { horizontal: horizontalTilt, vertical: verticalTilt };
     }
+    
+    function detectLighting(frame) {
+      let total = 0;
+      for (let i = 0; i < frame.data.length; i += 4) {
+        total += (frame.data[i] + frame.data[i+1] + frame.data[i+2]) / 3;
+      }
+      return total / (frame.data.length / 4);
+    }
+    
+    function analyzeComposition() {
+      if (faceLandmarks.length === 0) return {};
+      
+      // Hitung posisi rata-rata wajah
+      const faceCenter = faceLandmarks.reduce((acc, point) => {
+        return { x: acc.x + point.x, y: acc.y + point.y };
+      }, { x: 0, y: 0 });
+      
+      faceCenter.x /= faceLandmarks.length;
+      faceCenter.y /= faceLandmarks.length;
+      
+      // Hitung ukuran wajah (diameter bounding box)
+      const minX = Math.min(...faceLandmarks.map(p => p.x));
+      const maxX = Math.max(...faceLandmarks.map(p => p.x));
+      const minY = Math.min(...faceLandmarks.map(p => p.y));
+      const maxY = Math.max(...faceLandmarks.map(p => p.y));
+      const faceWidth = maxX - minX;
+      const faceHeight = maxY - minY;
+      const faceSize = Math.max(faceWidth / canvas.width, faceHeight / canvas.height);
+      
+      // Tentukan posisi wajah dalam frame
+      let facePosition = "center";
+      if (faceCenter.x < canvas.width * 0.4) facePosition = "left";
+      else if (faceCenter.x > canvas.width * 0.6) facePosition = "right";
+      
+      return {
+        facePosition,
+        faceSize,
+        faceCenter
+      };
+    }
+    
+    // Text-to-speech
+    function speak(text) {
+      if (text === lastSpoken || document.getElementById("voiceGuide").value === "off") return;
+      lastSpoken = text;
+      
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "id-ID";
+        utterance.rate = 1.0;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+    
+    // Update status
+    function updateStatus(text, icon) {
+      statusText.innerHTML = `<span class="status-icon">${icon}</span><span>${text}</span>`;
+    }
+    
+    // Tampilkan panduan
+    function showGuide(type) {
+      let title = "";
+      let content = "";
+      
+      switch (type) {
+        case "pose":
+          title = "Panduan Pose Profesional";
+          content = `
+            <h2>${title}</h2>
+            <div style="text-align: left; line-height: 1.6;">
+              <p><strong>1. Pose Dasar:</strong></p>
+              <ul>
+                <li>Berdiri dengan satu kaki sedikit di depan untuk postur alami</li>
+                <li>Pinggul sedikit dimiringkan untuk menciptakan lekuk tubuh</li>
+                <li>Bahunya ke belakang, dada ke depan</li>
+              </ul>
+              
+              <p><strong>2. Pose Kepala:</strong></p>
+              <ul>
+                <li>Dagu sedikit diturunkan untuk menghindari wajah terlihat lebar</li>
+                <li>Kepala sedikit dimiringkan untuk tampilan alami</li>
+                <li>Mata melihat sedikit di atas kamera untuk mata yang lebih terbuka</li>
+              </ul>
+              
+              <p><strong>3. Pose Tangan:</strong></p>
+              <ul>
+                <li>Letakkan tangan di pinggang atau saku untuk tampilan santai</li>
+                <li>Untuk close-up, sentuh wajah dengan lembut</li>
+                <li>Hindari tangan tergantung lurus di samping badan</li>
+              </ul>
+              
+              <p><strong>4. Pose Kreatif:</strong></p>
+              <ul>
+                <li>Berdiri menyamping dengan melihat ke kamera</li>
+                <li>Berdiri dengan tangan di belakang</li>
+                <li>Duduk dengan satu kaki dilipat dan satu kaki lurus</li>
+              </ul>
+            </div>
+          `;
+          break;
+          
+        case "expression":
+          title = "Panduan Ekspresi Wajah";
+          content = `
+            <h2>${title}</h2>
+            <div style="text-align: left; line-height: 1.6;">
+              <p><strong>1. Senyum Alami:</strong></p>
+              <ul>
+                <li>Pikirkan sesuatu yang menyenangkan untuk senyum alami</li>
+                <li>Senyum dengan mata (mata sedikit menyipit)</li>
+                <li>Hindari senyum terlalu lebar yang membuat mata mengecil</li>
+              </ul>
+              
+              <p><strong>2. Ekspresi Serius:</strong></p>
+              <ul>
+                <li>Relakskan semua otot wajah</li>
+                <li>Bibir sedikit terkatup (tidak mengatup kuat)</li>
+                <li>Pandangan mata fokus dan intens</li>
+              </ul>
+              
+              <p><strong>3. Ekspresi Bahagia:</strong></p>
+              <ul>
+                <li>Bibir terbuka sedikit menunjukkan gigi atas</li>
+                <li>Alis sedikit terangkat</li>
+                <li>Kerutkan sedikit mata untuk kesan tulus</li>
+              </ul>
+              
+              <p><strong>4. Tips Umum:</strong></p>
+              <ul>
+                <li>Latihan di depan cermin untuk mengenali ekspresi terbaik Anda</li>
+                <li>Jaga bibir sedikit lembab untuk tampilan segar</li>
+                <li>Bernapas perlahan sebelum foto untuk relaksasi</li>
+              </ul>
+            </div>
+          `;
+          break;
+          
+        case "composition":
+          title = "Panduan Komposisi Foto";
+          content = `
+            <h2>${title}</h2>
+            <div style="text-align: left; line-height: 1.6;">
+              <p><strong>1. Rule of Thirds:</strong></p>
+              <ul>
+                <li>Bagi frame menjadi 9 bagian sama besar dengan 2 garis horisontal dan 2 vertikal</li>
+                <li>Letakkan titik fokus (mata, wajah) di persimpangan garis</li>
+                <li>Untuk potret, mata berada di garis atas</li>
+              </ul>
+              
+              <p><strong>2. Leading Lines:</strong></p>
+              <ul>
+                <li>Gunakan garis alami (jalan, pagar) untuk menuntun mata ke subjek</li>
+                <li>Garis diagonal menambah dinamika foto</li>
+                <li>Garis lengkung untuk kesan lembut</li>
+              </ul>
+              
+              <p><strong>3. Framing:</strong></p>
+              <ul>
+                <li>Gunakan elemen alami (pintu, jendela, daun) sebagai bingkai</li>
+                <li>Bingkai membantu memfokuskan perhatian ke subjek</li>
+                <li>Bingkai gelap membantu menyorot subjek terang</li>
+              </ul>
+              
+              <p><strong>4. Negative Space:</strong></p>
+              <ul>
+                <li>Ruang kosong membantu menciptakan kesan minimalis</li>
+                <li>Efektif untuk menonjolkan subjek kecil</li>
+                <li>Memberikan "ruang bernapas" dalam komposisi</li>
+              </ul>
+            </div>
+          `;
+          break;
+          
+        case "lighting":
+          title = "Panduan Pencahayaan Foto";
+          content = `
+            <h2>${title}</h2>
+            <div style="text-align: left; line-height: 1.6;">
+              <p><strong>1. Arah Cahaya:</strong></p>
+              <ul>
+                <li><strong>Front Light:</strong> Cahaya dari depan, wajah terlihat rata tapi aman</li>
+                <li><strong>Side Light:</strong> Cahaya dari samping, menciptakan dimensi dan tekstur</li>
+                <li><strong>Back Light:</strong> Cahaya dari belakang, bisa membuat siluet</li>
+              </ul>
+              
+              <p><strong>2. Kualitas Cahaya:</strong></p>
+              <ul>
+                <li><strong>Cahaya Keras:</strong> Bayangan tegas, baik untuk foto dramatis</li>
+                <li><strong>Cahaya Lembut:</strong> Bayangan halus, baik untuk potret</li>
+                <li>Diffuser bisa melembutkan cahaya matahari langsung</li>
+              </ul>
+              
+              <p><strong>3. Golden Hour:</strong></p>
+              <ul>
+                <li>Satu jam setelah matahari terbit atau sebelum terbenam</li>
+                <li>Cahaya hangat dan lembut dengan bayangan panjang</li>
+                <li>Warna keemasan alami untuk kulit</li>
+              </ul>
+              
+              <p><strong>4. White Balance:</strong></p>
+              <ul>
+                <li><strong>Daylight:</strong> Untuk cahaya matahari alami</li>
+                <li><strong>Cloudy:</strong> Untuk hari berawan, menambah kehangatan</li>
+                <li><strong>Tungsten:</strong> Untuk cahaya lampu pijar, menetralkan warna kuning</li>
+              </ul>
+            </div>
+          `;
+          break;
+      }
+      
+      modalContent.innerHTML = content;
+      guideModal.style.display = "flex";
+    }
+    
+    // Tutup modal
+    function closeModal() {
+      guideModal.style.display = "none";
+    }
+    
+    // Event listeners untuk pengaturan
+    document.getElementById("resolution").addEventListener("change", initCamera);
+    document.getElementById("whiteBalance").addEventListener("change", () => {
+      speak("White balance diubah");
+    });
+    
+    document.getElementById("filter").addEventListener("change", () => {
+      speak(`Filter ${document.getElementById("filter").value} diterapkan`);
+    });
+    
+    document.getElementById("grid").addEventListener("change", () => {
+      const grid = document.getElementById("grid").value;
+      const gridOverlay = document.querySelector(".grid-overlay");
+      
+      if (grid === "none") {
+        gridOverlay.style.background = "none";
+      } else if (grid === "ruleOfThirds") {
+        gridOverlay.style.background = `
+          linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)
+        `;
+        gridOverlay.style.backgroundSize = "33.33% 33.33%";
+      } else if (grid === "goldenRatio") {
+        gridOverlay.style.background = `
+          linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)
+        `;
+        gridOverlay.style.backgroundSize = "38.2% 38.2%";
+      } else if (grid === "crosshair") {
+        gridOverlay.style.background = `
+          linear-gradient(to right, rgba(255,255,255,0.1) 50%, transparent 50%),
+          linear-gradient(to bottom, rgba(255,255,255,0.1) 50%, transparent 50%)
+        `;
+        gridOverlay.style.backgroundSize = "100% 100%";
+      }
+    });
+    
+    // Update range values
+    const rangeInputs = ["exposure", "brightness", "contrast", "saturation"];
+    rangeInputs.forEach(id => {
+      const input = document.getElementById(id);
+      const valueDisplay = document.getElementById(`${id}Value`);
+      
+      input.addEventListener("input", () => {
+        valueDisplay.textContent = input.value;
+      });
+    });
+    
+    // Inisialisasi aplikasi
+    window.onload = initCamera;
+    
+    // Tutup modal saat klik di luar konten
+    guideModal.addEventListener("click", (e) => {
+      if (e.target === guideModal) {
+        closeModal();
+      }
+    });
   </script>
 </body>
 </html>
