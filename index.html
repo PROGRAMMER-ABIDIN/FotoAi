@@ -1,68 +1,150 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Kamera Fotografer</title>
+  <meta charset="UTF-8">
+  <title>Deteksi Kamera AI + Suara</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #111; color: white; }
-    video, canvas { max-width: 100%; border: 2px solid #fff; border-radius: 10px; margin-top: 10px; }
-    #feedback { margin: 10px; font-size: 1.2em; color: yellow; }
-    #capture { padding: 10px 20px; background: green; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    body {
+      background-color: #111;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    video, canvas {
+      border: 2px solid #fff;
+      border-radius: 10px;
+      margin: 10px;
+      width: 80%;
+      max-width: 500px;
+    }
+    #status {
+      font-size: 1.2em;
+      margin-top: 20px;
+      padding: 10px;
+      background: #222;
+      border-radius: 10px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
-  <h1>AI Kamera Fotografer</h1>
+  <h1>AI Kamera dengan Suara</h1>
   <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-  <div id="feedback">Mendeteksi...</div>
-  <button id="capture">Ambil Foto</button>  <script>
+  <canvas id="canvas" hidden></canvas>
+  <div id="status">Memuat kamera...</div>
+
+  <script>
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
-    const feedback = document.getElementById("feedback");
-    const captureBtn = document.getElementById("capture");
-    const ctx = canvas.getContext("2d");
+    const statusText = document.getElementById("status");
 
-    // Get camera access
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => video.srcObject = stream)
-      .catch(err => alert("Akses kamera ditolak."));
+    let lastSpoken = ""; // untuk hindari pengulangan suara
 
-    // Gyroscope dan accelerometer untuk deteksi kemiringan
-    window.addEventListener("deviceorientation", e => {
-      const beta = e.beta;  // up/down
-      const gamma = e.gamma; // left/right
+    // 🔊 Fungsi bicara
+    function speak(text) {
+      if (text === lastSpoken) return;
+      lastSpoken = text;
 
-      let msg = "Stabil";
-      if (Math.abs(beta) > 10 || Math.abs(gamma) > 10) {
-        msg = `Kamera miring: β=${beta.toFixed(1)}°, γ=${gamma.toFixed(1)}°`;
-        playBeep();
-      }
-
-      feedback.textContent = msg;
-    });
-
-    function playBeep() {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = ctx.createOscillator();
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(600, ctx.currentTime);
-      oscillator.connect(ctx.destination);
-      oscillator.start();
-      oscillator.stop(ctx.currentTime + 0.2);
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "id-ID";
+      window.speechSynthesis.cancel(); // hentikan yang sedang bicara
+      window.speechSynthesis.speak(utterance);
     }
 
-    // Ambil foto dan simpan jika stabil
-    captureBtn.onclick = () => {
+    // 🎥 Aktifkan kamera
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          startDetection();
+        };
+      })
+      .catch((err) => {
+        statusText.innerText = "Gagal mengakses kamera: " + err.message;
+        speak("Gagal membuka kamera");
+      });
+
+    // 🔍 Analisis posisi & gerakan
+    function startDetection() {
+      const ctx = canvas.getContext("2d");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
 
-      const imgURL = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = imgURL;
-      link.download = `foto_${Date.now()}.png`;
-      link.click();
-      feedback.textContent = "Foto disimpan!";
-    };
-  </script></body>
+      let lastFrame = null;
+
+      setInterval(() => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const stability = getImageDifference(lastFrame, frame);
+
+        const tilt = detectTilt(ctx, canvas);
+
+        let status = "";
+
+        if (stability > 50) {
+          status = "📸 Kamera tidak stabil! Harap diamkan.";
+          speak("Kamera tidak stabil, harap pegang dengan mantap.");
+        } else if (tilt.horizontal > 10) {
+          status = "↪️ Kamera miring ke kanan.";
+          speak("Posisi kamera miring ke kanan.");
+        } else if (tilt.horizontal < -10) {
+          status = "↩️ Kamera miring ke kiri.";
+          speak("Posisi kamera miring ke kiri.");
+        } else if (tilt.vertical > 10) {
+          status = "🔽 Kamera terlalu menghadap ke bawah.";
+          speak("Kamera menghadap terlalu ke bawah.");
+        } else if (tilt.vertical < -10) {
+          status = "🔼 Kamera terlalu menghadap ke atas.";
+          speak("Kamera menghadap terlalu ke atas.");
+        } else {
+          status = "✅ Kamera stabil & posisi bagus.";
+          speak("Kamera dalam posisi bagus, silakan ambil gambar.");
+        }
+
+        statusText.innerText = status;
+        lastFrame = frame;
+      }, 1000);
+    }
+
+    // 📷 Deteksi gerakan dari frame sebelumnya
+    function getImageDifference(frame1, frame2) {
+      if (!frame1 || !frame2) return 0;
+      let diff = 0;
+      for (let i = 0; i < frame1.data.length; i += 4) {
+        const avg1 = (frame1.data[i] + frame1.data[i + 1] + frame1.data[i + 2]) / 3;
+        const avg2 = (frame2.data[i] + frame2.data[i + 1] + frame2.data[i + 2]) / 3;
+        diff += Math.abs(avg1 - avg2);
+      }
+      return diff / (frame1.data.length / 4);
+    }
+
+    // 🎯 Deteksi kemiringan dengan distribusi cahaya
+    function detectTilt(ctx, canvas) {
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const image = ctx.getImageData(0, 0, width, height);
+      let left = 0, right = 0, top = 0, bottom = 0;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const i = (y * width + x) * 4;
+          const brightness = (image.data[i] + image.data[i + 1] + image.data[i + 2]) / 3;
+
+          if (x < width / 2) left += brightness;
+          else right += brightness;
+
+          if (y < height / 2) top += brightness;
+          else bottom += brightness;
+        }
+      }
+
+      const horizontalTilt = (right - left) / (left + right) * 100;
+      const verticalTilt = (bottom - top) / (top + bottom) * 100;
+
+      return { horizontal: horizontalTilt, vertical: verticalTilt };
+    }
+  </script>
+</body>
 </html>
